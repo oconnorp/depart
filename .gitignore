@@ -31,7 +31,6 @@ log.txt
 
 # Node (match at repo root and under functions/, etc.)
 node_modules/
-functions/node_modules
 npm-debug.log
 yarn-error.log
 
