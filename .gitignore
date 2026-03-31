@@ -29,8 +29,8 @@ log.txt
 /out-tsc
 /bazel-out
 
-# Node
-/node_modules
+# Node (match at repo root and under functions/, etc.)
+node_modules/
 npm-debug.log
 yarn-error.log
 
