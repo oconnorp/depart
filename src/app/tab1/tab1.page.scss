@@ -1,0 +1,79 @@
+.muted {
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+}
+
+.big {
+  font-size: 1.25rem;
+}
+
+.rec-card {
+  border-left: 4px solid var(--ion-color-primary);
+}
+
+.rec-option-list {
+  padding: 0;
+  margin: 0;
+}
+
+.rec-option-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
+.rec-mode {
+  font-weight: 600;
+}
+
+.rec-detail {
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.status {
+  font-weight: 600;
+  margin-top: 0.75rem;
+
+  &.NOW,
+  &.late {
+    color: var(--ion-color-danger);
+  }
+
+  &.SOON,
+  &.soon {
+    color: var(--ion-color-warning-shade);
+  }
+
+  &.OK,
+  &.ok {
+    color: var(--ion-color-success);
+  }
+}
+
+.detail {
+  color: var(--ion-color-medium);
+  font-size: 0.85rem;
+  margin-left: 0.25rem;
+}
+
+.warn {
+  color: var(--ion-color-warning-shade);
+}
+
+.err {
+  color: var(--ion-color-danger);
+}
+
+.issue-list {
+  margin: 0.75rem 0;
+  padding: 0;
+}
+
+.block-note {
+  display: block;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}

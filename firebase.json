@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs24"
+  },
+  "hosting": {
+    "public": "www",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": "api"
+      }
+    ]
+  }
+}

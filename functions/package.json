@@ -1,0 +1,16 @@
+{
+  "name": "depart-functions",
+  "description": "HTTPS proxy for BART, 511, and Google Maps — injects API keys from server environment",
+  "engines": {
+    "node": "24"
+  },
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "firebase-functions": "^6.3.0"
+  },
+  "private": true
+}

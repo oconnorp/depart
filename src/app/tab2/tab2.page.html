@@ -1,0 +1,271 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Setup</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="ion-padding">
+    <ion-note color="primary" class="block-note">
+      <strong>Important:</strong> After you enter locations and options, tap <strong>Save settings</strong>. The Commute tab refreshes when you open it.
+    </ion-note>
+    @if (serverKeys) {
+      <ion-note color="medium" class="block-note">
+        This build uses <strong>server-side API keys</strong> (Firebase Functions). You do not enter BART, 511, or Google keys here — they are set in the Cloud Function environment.
+      </ion-note>
+    }
+    @if (!serverKeys) {
+      <p class="muted">
+        Keys stay on this device. For addresses: add a Google key, then tap <strong>Geocode</strong> for each, or type latitude/longitude yourself. Google needs <strong>Routes API</strong>, <strong>Geocoding API</strong>, and (for Drive) traffic.
+      </p>
+    }
+
+    <ion-list inset="true">
+      <ion-list-header>
+        <ion-label>Locations</ion-label>
+      </ion-list-header>
+      <ion-item>
+        <ion-textarea
+          label="Home address"
+          labelPlacement="stacked"
+          [(ngModel)]="homeAddress"
+          placeholder="Street, city"
+          [autoGrow]="true"
+        ></ion-textarea>
+      </ion-item>
+      <ion-item>
+        <ion-button slot="end" (click)="geocodeHome()" [disabled]="geocoding">Geocode</ion-button>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="Home lat"
+          labelPlacement="stacked"
+          type="number"
+          [(ngModel)]="model.homeLat"
+        ></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="Home lng"
+          labelPlacement="stacked"
+          type="number"
+          [(ngModel)]="model.homeLng"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-textarea
+          label="School address"
+          labelPlacement="stacked"
+          [(ngModel)]="schoolAddress"
+          placeholder="School name or address"
+          [autoGrow]="true"
+        ></ion-textarea>
+      </ion-item>
+      <ion-item>
+        <ion-button slot="end" (click)="geocodeSchool()" [disabled]="geocoding">Geocode</ion-button>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="School lat"
+          labelPlacement="stacked"
+          type="number"
+          [(ngModel)]="model.schoolLat"
+        ></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="School lng"
+          labelPlacement="stacked"
+          type="number"
+          [(ngModel)]="model.schoolLng"
+        ></ion-input>
+      </ion-item>
+    </ion-list>
+
+    <ion-list inset="true">
+      <ion-list-header>
+        <ion-label>Modes</ion-label>
+      </ion-list-header>
+      <ion-item>
+        <ion-toggle [(ngModel)]="model.modeBart">BART</ion-toggle>
+      </ion-item>
+      <ion-item>
+        <ion-toggle [(ngModel)]="model.modeMuni">SF Muni bus</ion-toggle>
+      </ion-item>
+      <ion-item>
+        <ion-toggle [(ngModel)]="model.modeDrive">Drive / car</ion-toggle>
+      </ion-item>
+    </ion-list>
+
+    @if (model.modeBart) {
+      <ion-list inset="true">
+        <ion-list-header>
+          <ion-label>BART</ion-label>
+        </ion-list-header>
+        <ion-item>
+          <ion-input
+            label="Origin station (abbr)"
+            labelPlacement="stacked"
+            [(ngModel)]="model.bartOrigin"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Transfer station (abbr)"
+            labelPlacement="stacked"
+            [(ngModel)]="model.bartTransferStation"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Schedule dest (abbr)"
+            labelPlacement="stacked"
+            [(ngModel)]="model.bartDestination"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="ETD destinations (comma)"
+            labelPlacement="stacked"
+            [(ngModel)]="bartDestStr"
+            placeholder="Richmond, Antioch, Pittsburg/Bay Point"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Arrive at transfer by (hour)"
+            type="number"
+            [(ngModel)]="model.bartArrivalHour"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Minute"
+            type="number"
+            [(ngModel)]="model.bartArrivalMinute"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Walk home → BART (min, no Muni)"
+            type="number"
+            [(ngModel)]="model.walkToBartMins"
+          ></ion-input>
+        </ion-item>
+      </ion-list>
+    }
+
+    @if (model.modeMuni && model.modeBart) {
+      <ion-list inset="true">
+        <ion-list-header>
+          <ion-label>Muni + BART timing</ion-label>
+        </ion-list-header>
+        <ion-item>
+          <ion-input
+            label="Walk to bus (min)"
+            type="number"
+            [(ngModel)]="model.walkToBusMins"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Bus ride to BART (min)"
+            type="number"
+            [(ngModel)]="model.busRideMins"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Walk bus stop → faregates (min)"
+            type="number"
+            [(ngModel)]="model.busToBartWalkMins"
+          ></ion-input>
+        </ion-item>
+      </ion-list>
+    }
+
+    @if (model.modeMuni) {
+      <ion-list inset="true">
+        <ion-list-header>
+          <ion-label>Muni (511)</ion-label>
+        </ion-list-header>
+        <ion-item>
+          <ion-input
+            label="Stop ID"
+            [(ngModel)]="model.muniStopId"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Agency"
+            [(ngModel)]="model.muniAgency"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Lines (comma)"
+            [(ngModel)]="muniLinesStr"
+            placeholder="12, 14, 49, 14R, 49R"
+          ></ion-input>
+        </ion-item>
+      </ion-list>
+    }
+
+    @if (model.modeDrive) {
+      <ion-list inset="true">
+        <ion-list-header>
+          <ion-label>School arrival (drive)</ion-label>
+        </ion-list-header>
+        <ion-item>
+          <ion-input
+            label="Hour"
+            type="number"
+            [(ngModel)]="model.schoolArrivalHour"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Minute"
+            type="number"
+            [(ngModel)]="model.schoolArrivalMinute"
+          ></ion-input>
+        </ion-item>
+      </ion-list>
+    }
+
+    @if (!serverKeys) {
+      <ion-list inset="true">
+        <ion-list-header>
+          <ion-label>API keys</ion-label>
+        </ion-list-header>
+        <ion-item>
+          <ion-input
+            label="Google Maps API key"
+            labelPlacement="stacked"
+            type="password"
+            [(ngModel)]="model.googleMapsApiKey"
+            placeholder="Routes + Geocoding"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="BART API key"
+            labelPlacement="stacked"
+            [(ngModel)]="model.bartApiKey"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="511.org API key"
+            labelPlacement="stacked"
+            [(ngModel)]="model.api511Key"
+          ></ion-input>
+        </ion-item>
+      </ion-list>
+    }
+
+    <ion-button expand="block" (click)="save()">Save settings</ion-button>
+    <ion-button expand="block" fill="clear" (click)="resetDefaults()">Reset defaults (coords only)</ion-button>
+  </div>
+</ion-content>

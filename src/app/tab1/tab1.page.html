@@ -1,0 +1,226 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Depart</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="goSetup()">
+        <ion-icon slot="icon-only" name="settings-outline" aria-label="Setup"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  @if (!settingsService.isConfigured(settings)) {
+    <div class="ion-padding">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Finish setup</ion-card-title>
+          <ion-card-subtitle>The Commute tab loads here after settings are saved</ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <p>
+            Use the <strong>Setup</strong> tab to enter addresses (or lat/lng), choose BART / Muni / Drive, add API keys, then tap
+            <strong>Save settings</strong>. You will be switched back here automatically.
+          </p>
+          @if (setupIssues.length) {
+            <ion-list lines="none" class="issue-list">
+              @for (issue of setupIssues; track $index) {
+                <ion-item>
+                  <ion-icon name="alert-circle-outline" slot="start" color="warning" aria-hidden="true"></ion-icon>
+                  <ion-label class="ion-text-wrap">{{ issue }}</ion-label>
+                </ion-item>
+              }
+            </ion-list>
+          }
+          <ion-button expand="block" (click)="goSetup()">Open Setup</ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  }
+
+  @if (settingsService.isConfigured(settings)) {
+    @if (loading && !result) {
+      <div class="ion-padding">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Loading live data…</p>
+      </div>
+    }
+
+    @if (error) {
+      <div class="ion-padding">
+        <ion-text color="danger">{{ error }}</ion-text>
+      </div>
+    }
+
+    @if (result && settings) {
+      <div class="ion-padding">
+        <p class="muted">{{ fmt(result.now) }}</p>
+
+        @if (result && !result.recommendations.length) {
+          <ion-card>
+            <ion-card-content>
+              <p class="muted">No on-time option found with current data. Check details below.</p>
+            </ion-card-content>
+          </ion-card>
+        }
+
+        @if (result.recommendations.length) {
+          <ion-card class="rec-card">
+            <ion-card-header>
+              <ion-card-title>Leave-by options</ion-card-title>
+              <ion-card-subtitle>Latest leave first (most time at home). Earlier times still work.</ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content>
+              <ion-list lines="full" class="rec-option-list">
+                @for (rec of result.recommendations; track $index) {
+                  <ion-item lines="none">
+                    <ion-label>
+                      <p class="rec-option-label">
+                        @if ($first) {
+                          <ion-badge color="success">Best</ion-badge>
+                        }
+                        <span class="rec-mode">{{ rec.label }}</span>
+                      </p>
+                      <p class="big">
+                        Leave by <strong>{{ fmt(rec.leaveBy) }}</strong>
+                        @if (rec.leaveInMinutes <= 0) {
+                          <span> — leave now</span>
+                        }
+                        @if (rec.leaveInMinutes > 0) {
+                          <span> — in {{ rec.leaveInMinutes }}m</span>
+                        }
+                      </p>
+                      @if (tripDurationLine(rec); as durLine) {
+                        <p class="muted">{{ durLine }}</p>
+                      }
+                      @if (rec.detail && rec.kind !== 'drive') {
+                        <p class="muted rec-detail">{{ rec.detail }}</p>
+                      }
+                    </ion-label>
+                  </ion-item>
+                }
+              </ion-list>
+            </ion-card-content>
+          </ion-card>
+        }
+
+        @if (settings.modeBart && settings.modeMuni) {
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Transit — Muni + BART</ion-card-title>
+              <ion-card-subtitle>
+                {{ settings.bartTransferStation }} by {{ deadlineLabel(settings.bartArrivalHour, settings.bartArrivalMinute) }}
+              </ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content>
+              @if (result.transitError) {
+                <ion-text color="danger"><p>{{ result.transitError }}</p></ion-text>
+              }
+
+              @if (!result.transitError && result.transitChainOptions.length === 0) {
+                <p class="warn">No route gets you to Rockridge on time from the next buses.</p>
+                @if (result.trains?.length) {
+                  <p class="muted">Upcoming BART trains:</p>
+                  <ion-list lines="none">
+                    @for (t of trainRows(result.trains); track t.departsAt.getTime()) {
+                      <ion-item>
+                        <ion-label>
+                          <h3>{{ fmt(t.departsAt) }} — {{ t.dest }}</h3>
+                          <p>Rockridge ~ {{ rockridgeAfterTrain(t, result.bartTripMins) }}</p>
+                        </ion-label>
+                      </ion-item>
+                    }
+                  </ion-list>
+                }
+              }
+
+              @for (opt of result.transitChainOptions; track $index) {
+                <div>
+                  <p [class]="'status ' + transitStatus(opt)">
+                    <strong>{{ transitStatus(opt) }}</strong>
+                    {{ leaveMins(opt.leaveHome.getTime() - result.now.getTime()) <= 0 ? 'Leave NOW' : 'Leave by ' + fmt(opt.leaveHome) + ' (' + leaveMins(opt.leaveHome.getTime() - result.now.getTime()) + 'm)' }}
+                  </p>
+                  <p class="detail">
+                    Bus {{ opt.bus.line }} &#64;{{ fmt(opt.bus.departsAt) }}
+                    @if (opt.matchedTrain) {
+                      <span> — BART &#64;{{ fmt(opt.matchedTrain.departsAt) }} — Rockridge {{ fmt(opt.actualArrivalRockridge) }}</span>
+                    }
+                    @if (!opt.matchedTrain) {
+                      <span> — BART ~{{ fmt(opt.bartDeparture) }}</span>
+                    }
+                  </p>
+                </div>
+              }
+            </ion-card-content>
+          </ion-card>
+        }
+
+        @if (settings.modeBart && !settings.modeMuni && result.bartOnlyOptions.length) {
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>BART — walk to {{ settings.bartOrigin }}</ion-card-title>
+              <ion-card-subtitle>
+                {{ settings.bartTransferStation }} by {{ deadlineLabel(settings.bartArrivalHour, settings.bartArrivalMinute) }}
+              </ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content>
+              @for (o of result.bartOnlyOptions; track o.leaveHome.getTime()) {
+                <ion-item lines="none">
+                  <ion-label>
+                    <h3>Leave {{ fmt(o.leaveHome) }} — {{ o.train.dest }}</h3>
+                    <p>Rockridge {{ fmt(o.actualArrivalRockridge) }} {{ o.onTime ? '(on time)' : '(late)' }}</p>
+                  </ion-label>
+                </ion-item>
+              }
+            </ion-card-content>
+          </ion-card>
+        }
+
+        @if (settings.modeMuni && !settings.modeBart && result.buses?.length) {
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>SF Muni — next buses</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              @for (b of muniRows(result.buses); track b.departsAt.getTime()) {
+                <ion-item lines="none">
+                  <ion-label>
+                    <h3>Line {{ b.line }}</h3>
+                    <p>{{ fmt(b.departsAt) }} ({{ b.minsFromNow }}m)</p>
+                  </ion-label>
+                </ion-item>
+              }
+            </ion-card-content>
+          </ion-card>
+        }
+
+        @if (settings.modeDrive) {
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Drive — school by {{ deadlineLabel(settings.schoolArrivalHour, settings.schoolArrivalMinute) }}</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              @if (result.drive.driveTimeMins === null) {
+                <p class="err">Could not load traffic data (check Google Maps API key).</p>
+              }
+              @if (result.drive.driveTimeMins !== null && result.drive.leaveBy) {
+                <p [class]="'status ' + (result.drive.status === 'LATE' ? 'late' : result.drive.status === 'URGENT' ? 'soon' : 'ok')">
+                  <strong>{{ result.drive.status }}</strong>
+                  {{ result.drive.status === 'LATE' ? 'Should have left already' : 'Leave by ' + fmt(result.drive.leaveBy) + ' (' + leaveMins(result.drive.leaveBy.getTime() - result.now.getTime()) + 'm)' }}
+                </p>
+                <p class="detail">{{ result.drive.driveTimeMins }} min with current traffic</p>
+                <ion-button expand="block" fill="outline" [href]="mapsDriveUrl()" target="_blank" rel="noopener">
+                  Open in Google Maps
+                </ion-button>
+              }
+            </ion-card-content>
+          </ion-card>
+        }
+      </div>
+    }
+  }
+</ion-content>

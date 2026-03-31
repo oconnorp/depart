@@ -1,0 +1,7 @@
+{
+  "name": "depart-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}

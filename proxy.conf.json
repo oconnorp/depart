@@ -1,0 +1,34 @@
+{
+  "/api/bart": {
+    "target": "https://api.bart.gov",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/bart": ""
+    }
+  },
+  "/api/511": {
+    "target": "https://api.511.org",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/511": ""
+    }
+  },
+  "/api/google-routes": {
+    "target": "https://routes.googleapis.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/google-routes": ""
+    }
+  },
+  "/api/maps-geocode": {
+    "target": "https://maps.googleapis.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/maps-geocode": ""
+    }
+  }
+}
